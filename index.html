@@ -3,9 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Snake Liquid Glass</title>
+<title>Horror Snake</title>
 
 <style>
+:root{
+    --glass: rgba(255,255,255,.08);
+    --border: rgba(255,255,255,.12);
+    --cyan: #00e5ff;
+    --red: #ff4d6d;
+}
+
 *{
     margin:0;
     padding:0;
@@ -13,95 +20,148 @@
 }
 
 body{
+    font-family:Inter,Arial,sans-serif;
+    overflow:hidden;
     height:100vh;
+
+    background:
+        radial-gradient(circle at 20% 20%, rgba(0,229,255,.15), transparent 35%),
+        radial-gradient(circle at 80% 70%, rgba(255,77,109,.10), transparent 35%),
+        linear-gradient(135deg,#04070d,#0b1020,#05070f);
+
     display:flex;
     justify-content:center;
     align-items:center;
-    overflow:hidden;
-    font-family:Inter,Arial,sans-serif;
-
-    background:
-        radial-gradient(circle at 20% 20%, rgba(0,212,255,.35), transparent 35%),
-        radial-gradient(circle at 80% 70%, rgba(255,0,255,.2), transparent 35%),
-        linear-gradient(135deg,#08121f,#111827,#0f172a);
 }
 
-.container{
-    padding:30px;
-    border-radius:35px;
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.08;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            transparent 0px,
+            transparent 2px,
+            white 3px
+        );
+    animation: noise 8s linear infinite;
+}
 
-    background:rgba(255,255,255,.08);
+@keyframes noise{
+    from{transform:translateY(0);}
+    to{transform:translateY(100px);}
+}
 
-    border:1px solid rgba(255,255,255,.15);
+.panel{
+    position:relative;
 
-    backdrop-filter:blur(30px);
-    -webkit-backdrop-filter:blur(30px);
+    padding:24px;
+
+    border-radius:30px;
+
+    background:var(--glass);
+
+    backdrop-filter:blur(24px);
+    -webkit-backdrop-filter:blur(24px);
+
+    border:1px solid var(--border);
 
     box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.2),
-        0 25px 50px rgba(0,0,0,.4);
+        0 20px 60px rgba(0,0,0,.45),
+        inset 0 1px 0 rgba(255,255,255,.1);
 }
 
-h1{
-    color:white;
+.title{
     text-align:center;
-    letter-spacing:4px;
-    margin-bottom:20px;
+    color:white;
+    font-size:32px;
+    letter-spacing:5px;
+    margin-bottom:12px;
 }
 
-.score{
-    color:white;
+.subtitle{
     text-align:center;
-    margin-top:15px;
-    font-size:20px;
+    color:#9ca3af;
+    margin-bottom:16px;
+}
+
+.stats{
+    display:flex;
+    justify-content:space-between;
+    color:white;
+    margin-bottom:12px;
 }
 
 canvas{
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,255,255,.08),
-            rgba(255,255,255,.03)
-        );
-
-    border-radius:24px;
-
-    border:1px solid rgba(255,255,255,.12);
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.08);
 }
 
-#screamer{
-    position:fixed;
+.overlay{
+    position:absolute;
     inset:0;
-    width:100%;
-    height:100%;
-    object-fit:cover;
     display:none;
-    z-index:99999;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    gap:12px;
+
+    border-radius:30px;
+
+    background:rgba(0,0,0,.75);
+
+    color:white;
+}
+
+.overlay button{
+    border:none;
+    cursor:pointer;
+
+    padding:12px 20px;
+
+    border-radius:12px;
+
+    background:var(--cyan);
+    color:black;
+    font-weight:bold;
+}
+
+.footer{
+    margin-top:12px;
+    text-align:center;
+    color:#9ca3af;
+    font-size:13px;
 }
 </style>
 </head>
 <body>
 
-<div class="container">
+<div class="panel">
 
-    <h1>SNAKE</h1>
+    <div class="title">HORROR SNAKE</div>
+    <div class="subtitle">WASD или стрелки</div>
+
+    <div class="stats">
+        <div>Очки: <span id="score">0</span></div>
+        <div>Рекорд: <span id="best">0</span></div>
+    </div>
 
     <canvas id="game" width="600" height="600"></canvas>
 
-    <div class="score">
-        Очки:
-        <span id="score">0</span>
+    <div class="footer">
+        Неоновая хоррор-змейка
+    </div>
+
+    <div class="overlay" id="gameOver">
+        <h1>GAME OVER</h1>
+        <p>Змейка столкнулась сама с собой</p>
+        <button onclick="restart()">Играть снова</button>
     </div>
 
 </div>
-
-<img id="screamer" src="screamer-fnaf.gif">
-
-<audio id="scream">
-    <source
-        src="five-nights-at-freddys-2-full-scream-sound.mp3"
-        type="audio/mpeg">
-</audio>
 
 <script>
 
@@ -111,80 +171,99 @@ const ctx = canvas.getContext("2d");
 const CELL = 30;
 const GRID = 20;
 
-let score = 0;
+let snake;
+let food;
+let dirX;
+let dirY;
+let score;
+let best = Number(localStorage.getItem("snakeBest") || 0);
 
-let snake = [
-    {x:10,y:10}
-];
+document.getElementById("best").textContent = best;
 
-let food = {
-    x:5,
-    y:5
-};
+function resetGame(){
 
-let dirX = 1;
-let dirY = 0;
+    snake = [
+        {x:10,y:10}
+    ];
 
-let lastMove = 0;
-const speed = 100;
+    food = randomFood();
+
+    dirX = 1;
+    dirY = 0;
+
+    score = 0;
+
+    document.getElementById("score").textContent = 0;
+}
+
+function randomFood(){
+
+    return {
+        x:Math.floor(Math.random()*GRID),
+        y:Math.floor(Math.random()*GRID)
+    };
+}
+
+resetGame();
 
 document.addEventListener("keydown",(e)=>{
 
-    const key = e.key.toLowerCase();
+    switch(e.code){
 
-    if((key==="w" || key==="arrowup") && dirY===0){
-        dirX = 0;
-        dirY = -1;
+        case "KeyW":
+        case "ArrowUp":
+
+            if(dirY===0){
+                dirX=0;
+                dirY=-1;
+            }
+            break;
+
+        case "KeyS":
+        case "ArrowDown":
+
+            if(dirY===0){
+                dirX=0;
+                dirY=1;
+            }
+            break;
+
+        case "KeyA":
+        case "ArrowLeft":
+
+            if(dirX===0){
+                dirX=-1;
+                dirY=0;
+            }
+            break;
+
+        case "KeyD":
+        case "ArrowRight":
+
+            if(dirX===0){
+                dirX=1;
+                dirY=0;
+            }
+            break;
     }
-
-    if((key==="s" || key==="arrowdown") && dirY===0){
-        dirX = 0;
-        dirY = 1;
-    }
-
-    if((key==="a" || key==="arrowleft") && dirX===0){
-        dirX = -1;
-        dirY = 0;
-    }
-
-    if((key==="d" || key==="arrowright") && dirX===0){
-        dirX = 1;
-        dirY = 0;
-    }
-
 });
 
-function moveSnake(){
+let lastMove = 0;
+const SPEED = 100;
+let running = true;
 
-    let head = {
+function move(){
+
+    const head = {
         x:snake[0].x + dirX,
         y:snake[0].y + dirY
     };
 
-    if(head.x < 0) head.x = GRID-1;
+    if(head.x < 0) head.x = GRID - 1;
     if(head.x >= GRID) head.x = 0;
 
-    if(head.y < 0) head.y = GRID-1;
+    if(head.y < 0) head.y = GRID - 1;
     if(head.y >= GRID) head.y = 0;
-
-    if(head.x === food.x &&
-       head.y === food.y){
-
-        score++;
-
-        document.getElementById("score")
-        .textContent = score;
-
-        food = {
-            x:Math.floor(Math.random()*GRID),
-            y:Math.floor(Math.random()*GRID)
-        };
-
-    }else{
-        snake.pop();
-    }
-
-    snake.unshift(head);
 
     for(let i=1;i<snake.length;i++){
 
@@ -192,16 +271,41 @@ function moveSnake(){
             head.x === snake[i].x &&
             head.y === snake[i].y
         ){
-
-            snake = [
-                {x:10,y:10}
-            ];
-
-            score = 0;
-
-            document.getElementById("score")
-            .textContent = 0;
+            gameOver();
+            return;
         }
+    }
+
+    snake.unshift(head);
+
+    if(
+        head.x === food.x &&
+        head.y === food.y
+    ){
+
+        score++;
+
+        document.getElementById("score")
+        .textContent = score;
+
+        if(score > best){
+
+            best = score;
+
+            localStorage.setItem(
+                "snakeBest",
+                best
+            );
+
+            document.getElementById("best")
+            .textContent = best;
+        }
+
+        food = randomFood();
+
+    }else{
+
+        snake.pop();
     }
 }
 
@@ -214,7 +318,7 @@ function drawFood(){
 
     ctx.fillStyle = "#ff4d6d";
 
-    ctx.shadowBlur = 20;
+    ctx.shadowBlur = 25;
     ctx.shadowColor = "#ff4d6d";
 
     ctx.arc(
@@ -237,35 +341,21 @@ function drawSnake(){
         const x = part.x * CELL;
         const y = part.y * CELL;
 
-        const gradient =
+        const g =
             ctx.createLinearGradient(
                 x,y,
                 x+CELL,y+CELL
             );
 
-        gradient.addColorStop(
-            0,
-            "#b8ffff"
-        );
+        g.addColorStop(0,"#c8ffff");
+        g.addColorStop(1,"#00e5ff");
 
-        gradient.addColorStop(
-            1,
-            "#00d4ff"
-        );
+        ctx.fillStyle = g;
 
-        ctx.fillStyle = gradient;
+        ctx.shadowBlur =
+            index === 0 ? 30 : 10;
 
-        if(index===0){
-
-            ctx.shadowBlur = 25;
-            ctx.shadowColor = "#00d4ff";
-
-        }else{
-
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = "#00d4ff";
-
-        }
+        ctx.shadowColor = "#00e5ff";
 
         ctx.beginPath();
 
@@ -283,13 +373,32 @@ function drawSnake(){
     ctx.shadowBlur = 0;
 }
 
+function drawGrid(){
+
+    ctx.strokeStyle =
+        "rgba(255,255,255,.03)";
+
+    for(let i=0;i<=GRID;i++){
+
+        ctx.beginPath();
+        ctx.moveTo(i*CELL,0);
+        ctx.lineTo(i*CELL,canvas.height);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0,i*CELL);
+        ctx.lineTo(canvas.width,i*CELL);
+        ctx.stroke();
+    }
+}
+
 function render(time){
 
-    if(time - lastMove > speed){
+    if(running && time-lastMove>SPEED){
 
-        moveSnake();
+        move();
 
-        lastMove = time;
+        lastMove=time;
     }
 
     ctx.clearRect(
@@ -299,27 +408,34 @@ function render(time){
         canvas.height
     );
 
+    drawGrid();
     drawFood();
     drawSnake();
 
     requestAnimationFrame(render);
 }
 
+function gameOver(){
+
+    running = false;
+
+    document
+    .getElementById("gameOver")
+    .style.display = "flex";
+}
+
+function restart(){
+
+    running = true;
+
+    document
+    .getElementById("gameOver")
+    .style.display = "none";
+
+    resetGame();
+}
+
 requestAnimationFrame(render);
-
-setTimeout(()=>{
-
-    const img =
-        document.getElementById("screamer");
-
-    const audio =
-        document.getElementById("scream");
-
-    img.style.display = "block";
-
-    audio.play().catch(()=>{});
-
-},20000);
 
 </script>
 
