@@ -1,525 +1,233 @@
-```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Liquid Glass Snake</title>
-
-<style>
-:root{
-    --glass: rgba(255,255,255,.08);
-    --glass-border: rgba(255,255,255,.18);
-    --accent:#4de8ff;
-    --bg1:#07111f;
-    --bg2:#0f172a;
-}
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    font-family:Inter,Arial,sans-serif;
-    height:100vh;
-    overflow:hidden;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    background:
-    radial-gradient(circle at 15% 20%, rgba(77,232,255,.25), transparent 25%),
-    radial-gradient(circle at 80% 70%, rgba(255,255,255,.08), transparent 25%),
-    linear-gradient(135deg,var(--bg1),var(--bg2));
-}
-
-.bg{
-    position:fixed;
-    inset:0;
-    overflow:hidden;
-    pointer-events:none;
-}
-
-.orb{
-    position:absolute;
-    border-radius:50%;
-    filter:blur(60px);
-    opacity:.35;
-    animation:float 12s infinite ease-in-out;
-}
-
-.orb:nth-child(1){
-    width:260px;
-    height:260px;
-    background:#00d4ff;
-    top:10%;
-    left:8%;
-}
-
-.orb:nth-child(2){
-    width:300px;
-    height:300px;
-    background:#66ffff;
-    bottom:10%;
-    right:10%;
-    animation-delay:-6s;
-}
-
-@keyframes float{
-    0%,100%{
-        transform:translateY(0px);
-    }
-    50%{
-        transform:translateY(-40px);
-    }
-}
-
-.panel{
-    position:relative;
-
-    width:min(92vw,760px);
-
-    padding:24px;
-
-    border-radius:32px;
-
-    background:var(--glass);
-
-    backdrop-filter:blur(24px);
-    -webkit-backdrop-filter:blur(24px);
-
-    border:1px solid var(--glass-border);
-
-    box-shadow:
-    0 25px 60px rgba(0,0,0,.4),
-    inset 0 1px 0 rgba(255,255,255,.15);
-}
-
-h1{
-    color:white;
-    text-align:center;
-    letter-spacing:4px;
-    margin-bottom:10px;
-}
-
-.topbar{
-    display:flex;
-    justify-content:space-between;
-    margin-bottom:14px;
-    color:white;
-}
-
-.card{
-    background:rgba(255,255,255,.05);
-    border:1px solid rgba(255,255,255,.08);
-    padding:10px 14px;
-    border-radius:16px;
-}
-
-canvas{
-    width:100%;
-    max-width:700px;
-    aspect-ratio:1;
-    display:block;
-    margin:auto;
-
-    border-radius:24px;
-
-    background:
-    linear-gradient(
-        135deg,
-        rgba(255,255,255,.05),
-        rgba(255,255,255,.02)
-    );
-
-    border:1px solid rgba(255,255,255,.08);
-}
-
-.controls{
-    margin-top:14px;
-    color:#d6d6d6;
-    text-align:center;
-}
-
-.overlay{
-    position:absolute;
-    inset:0;
-
-    display:none;
-    align-items:center;
-    justify-content:center;
-    flex-direction:column;
-
-    border-radius:32px;
-
-    background:rgba(0,0,0,.72);
-
-    color:white;
-}
-
-.overlay button{
-    margin-top:15px;
-    border:none;
-    padding:12px 22px;
-    border-radius:14px;
-    cursor:pointer;
-    font-weight:bold;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Современная Змейка</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1e1e24;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        h1 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+        .game-container {
+            position: relative;
+        }
+        canvas {
+            background-color: #2b2b36;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 255, 204, 0.2);
+            display: block;
+        }
+        /* Стили для скримера */
+        #screamer-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: black;
+            z-index: 9999;
+        }
+        #screamer-overlay img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Изображение заполнит весь экран */
+        }
+    </style>
 </head>
 <body>
 
-<div class="bg">
-<div class="orb"></div>
-<div class="orb"></div>
-</div>
-
-<div class="panel">
-
-<h1>LIQUID SNAKE</h1>
-
-<div class="topbar">
-<div class="card">
-Очки:
-<span id="score">0</span>
-</div>
-
-<div class="card">
-Рекорд:
-<span id="best">0</span>
-</div>
-</div>
-
-<canvas id="game" width="600" height="600"></canvas>
-
-<div class="controls">
-WASD / Стрелки • Space = Пауза
-</div>
-
-<div class="overlay" id="gameOver">
-<h2>Игра окончена</h2>
-<p>Нажмите кнопку для новой игры</p>
-<button onclick="restart()">Заново</button>
-</div>
-
-</div>
-
-<script>
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
-
-const SIZE=20;
-const CELL=30;
-
-let snake=[];
-let food={};
-let dx=1;
-let dy=0;
-
-let score=0;
-let best=Number(localStorage.getItem("glassBest")||0);
-
-let running=true;
-let paused=false;
-
-document.getElementById("best").textContent=best;
-
-function reset(){
-
-snake=[
-{x:10,y:10}
-];
-
-food=randomFood();
-
-dx=1;
-dy=0;
-
-score=0;
-
-document.getElementById("score").textContent=0;
-}
-
-function randomFood(){
-return{
-x:Math.floor(Math.random()*SIZE),
-y:Math.floor(Math.random()*SIZE)
-};
-}
-
-reset();
-
-document.addEventListener("keydown",e=>{
-
-switch(e.code){
-
-case"Space":
-paused=!paused;
-break;
-
-case"KeyW":
-case"ArrowUp":
-if(dy===0){
-dx=0;
-dy=-1;
-}
-break;
-
-case"KeyS":
-case"ArrowDown":
-if(dy===0){
-dx=0;
-dy=1;
-}
-break;
-
-case"KeyA":
-case"ArrowLeft":
-if(dx===0){
-dx=-1;
-dy=0;
-}
-break;
-
-case"KeyD":
-case"ArrowRight":
-if(dx===0){
-dx=1;
-dy=0;
-}
-break;
-}
-});
-
-let touchStartX=0;
-let touchStartY=0;
-
-canvas.addEventListener("touchstart",e=>{
-touchStartX=e.touches[0].clientX;
-touchStartY=e.touches[0].clientY;
-});
-
-canvas.addEventListener("touchend",e=>{
-
-const x=e.changedTouches[0].clientX;
-const y=e.changedTouches[0].clientY;
-
-const dxSwipe=x-touchStartX;
-const dySwipe=y-touchStartY;
-
-if(Math.abs(dxSwipe)>Math.abs(dySwipe)){
-
-if(dxSwipe>0 && dx===0){
-dx=1;dy=0;
-}
-
-if(dxSwipe<0 && dx===0){
-dx=-1;dy=0;
-}
-
-}else{
-
-if(dySwipe>0 && dy===0){
-dx=0;dy=1;
-}
-
-if(dySwipe<0 && dy===0){
-dx=0;dy=-1;
-}
-}
-});
-
-function gameOver(){
-
-running=false;
-
-document.getElementById("gameOver")
-.style.display="flex";
-}
-
-function restart(){
-
-document.getElementById("gameOver")
-.style.display="none";
-
-running=true;
-
-reset();
-}
-
-function move(){
-
-const head={
-x:snake[0].x+dx,
-y:snake[0].y+dy
-};
-
-if(head.x<0)head.x=SIZE-1;
-if(head.x>=SIZE)head.x=0;
-if(head.y<0)head.y=SIZE-1;
-if(head.y>=SIZE)head.y=0;
-
-for(let i=1;i<snake.length;i++){
-
-if(
-head.x===snake[i].x &&
-head.y===snake[i].y
-){
-gameOver();
-return;
-}
-}
-
-snake.unshift(head);
-
-if(
-head.x===food.x &&
-head.y===food.y
-){
-
-score++;
-
-document.getElementById("score")
-.textContent=score;
-
-if(score>best){
-
-best=score;
-
-localStorage.setItem(
-"glassBest",
-best
-);
-
-document.getElementById("best")
-.textContent=best;
-}
-
-food=randomFood();
-
-}else{
-snake.pop();
-}
-}
-
-function drawGrid(){
-
-ctx.strokeStyle=
-"rgba(255,255,255,.03)";
-
-for(let i=0;i<=SIZE;i++){
-
-ctx.beginPath();
-ctx.moveTo(i*CELL,0);
-ctx.lineTo(i*CELL,canvas.height);
-ctx.stroke();
-
-ctx.beginPath();
-ctx.moveTo(0,i*CELL);
-ctx.lineTo(canvas.width,i*CELL);
-ctx.stroke();
-}
-}
-
-function drawFood(){
-
-const pulse=
-Math.sin(Date.now()*0.01);
-
-ctx.shadowBlur=25;
-ctx.shadowColor="#ff4d6d";
-
-ctx.fillStyle="#ff4d6d";
-
-ctx.beginPath();
-
-ctx.arc(
-food.x*CELL+CELL/2,
-food.y*CELL+CELL/2,
-CELL/3+pulse,
-0,
-Math.PI*2
-);
-
-ctx.fill();
-
-ctx.shadowBlur=0;
-}
-
-function drawSnake(){
-
-snake.forEach((part,index)=>{
-
-const x=part.x*CELL;
-const y=part.y*CELL;
-
-const g=
-ctx.createLinearGradient(
-x,y,
-x+CELL,
-y+CELL
-);
-
-g.addColorStop(0,"#dfffff");
-g.addColorStop(1,"#4de8ff");
-
-ctx.fillStyle=g;
-
-ctx.shadowBlur=
-index===0?30:12;
-
-ctx.shadowColor=
-"#4de8ff";
-
-ctx.beginPath();
-
-ctx.roundRect(
-x+2,
-y+2,
-CELL-4,
-CELL-4,
-12
-);
-
-ctx.fill();
-});
-
-ctx.shadowBlur=0;
-}
-
-let lastMove=0;
-const SPEED=100;
-
-function render(time){
-
-if(
-running &&
-!paused &&
-time-lastMove>SPEED
-){
-move();
-lastMove=time;
-}
-
-ctx.clearRect(
-0,
-0,
-canvas.width,
-canvas.height
-);
-
-drawGrid();
-drawFood();
-drawSnake();
-
-requestAnimationFrame(render);
-}
-
-requestAnimationFrame(render);
-</script>
-
+    <h1>СУПЕР ЗМЕЙКА</h1>
+    
+    <div class="game-container">
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+    </div>
+
+    <div id="screamer-overlay">
+        <img src="screamer-fnaf.gif" alt="screamer">
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize;
+
+        let snake = [
+            { x: 10, y: 10 }
+        ];
+        let food = { x: 15, y: 15 };
+        
+        let dx = 0;
+        let dy = 0;
+        let score = 0;
+
+        // Игровой цикл
+        function drawGame() {
+            clearCanvas();
+            moveSnake();
+            checkCollision();
+            drawFood();
+            drawSnake();
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = '#2b2b36';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawSnake() {
+            snake.forEach((part, index) => {
+                // Голова змейки чуть ярче
+                ctx.fillStyle = index === 0 ? '#00ffcc' : '#00b38f';
+                ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize - 2, gridSize - 2);
+                
+                // Скругленные края для красоты (по желанию)
+                ctx.strokeStyle = '#1e1e24';
+                ctx.strokeRect(part.x * gridSize, part.y * gridSize, gridSize - 2, gridSize - 2);
+            });
+        }
+
+        function moveSnake() {
+            if (dx === 0 && dy === 0) return; // Игра не началась пока не нажата кнопка
+
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+            snake.unshift(head); // Добавляем новую голову
+
+            // Если змейка съела еду
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                spawnFood();
+            } else {
+                snake.pop(); // Удаляем хвост, если не съели еду
+            }
+        }
+
+        function drawFood() {
+            ctx.fillStyle = '#ff3366'; // Современный розово-красный цвет для еды
+            ctx.beginPath();
+            ctx.arc(
+                food.x * gridSize + gridSize / 2, 
+                food.y * gridSize + gridSize / 2, 
+                gridSize / 2 - 2, 
+                0, 
+                Math.PI * 2
+            );
+            ctx.fill();
+        }
+
+        function spawnFood() {
+            food.x = Math.floor(Math.random() * tileCount);
+            food.y = Math.floor(Math.random() * tileCount);
+            
+            // Проверка, чтобы еда не появилась на самой змейке
+            snake.forEach(part => {
+                if (part.x === food.x && part.y === food.y) {
+                    spawnFood();
+                }
+            });
+        }
+
+        function checkCollision() {
+            const head = snake[0];
+
+            // Столкновение со стенами
+            if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+                resetGame();
+            }
+
+            // Столкновение с самой собой
+            for (let i = 1; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    resetGame();
+                }
+            }
+        }
+
+        function resetGame() {
+            snake = [{ x: 10, y: 10 }];
+            dx = 0;
+            dy = 0;
+            score = 0;
+            spawnFood();
+        }
+
+        // Управление клавиатурой
+        window.addEventListener('keydown', e => {
+            switch (e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                case 'ц':
+                case 'Ц':
+                    if (dy !== 1) { dx = 0; dy = -1; }
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                case 'ы':
+                case 'Ы':
+                    if (dy !== -1) { dx = 0; dy = 1; }
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                case 'ф':
+                case 'Ф':
+                    if (dx !== 1) { dx = -1; dy = 0; }
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                case 'в':
+                case 'В':
+                    if (dx !== -1) { dx = 1; dy = 0; }
+                    break;
+            }
+        });
+
+        // Запуск игры на 10 кадров в секунду
+        setInterval(drawGame, 100);
+
+        // ==========================================
+        // ЛОГИКА СКРИМЕРА
+        // ==========================================
+        setTimeout(() => {
+            const screamerDiv = document.getElementById('screamer-overlay');
+            const jumpcareAudio = new Audio('five-nights-at-freddys-2-full-scream-sound.mp3');
+            
+            // Показываем гифку на весь экран
+            screamerDiv.style.display = 'block';
+            
+            // Включаем звук (сработает, если игрок уже нажимал на кнопки)
+            jumpcareAudio.play().catch(error => {
+                console.warn('Автовоспроизведение заблокировано браузером. Пользователь должен был нажать хоть одну кнопку до скримера.');
+            });
+
+        }, 20000); // 20000 миллисекунд = 20 секунд
+
+    </script>
 </body>
 </html>
-```
