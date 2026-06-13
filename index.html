@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Snake Modern</title>
+<title>Snake Liquid Glass</title>
 
 <style>
 *{
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family:Inter,sans-serif;
 }
 
 body{
@@ -18,33 +17,56 @@ body{
     display:flex;
     justify-content:center;
     align-items:center;
-    background:linear-gradient(135deg,#0f172a,#1e293b);
     overflow:hidden;
+    font-family:Inter,Arial,sans-serif;
+
+    background:
+        radial-gradient(circle at 20% 20%, rgba(0,212,255,.35), transparent 35%),
+        radial-gradient(circle at 80% 70%, rgba(255,0,255,.2), transparent 35%),
+        linear-gradient(135deg,#08121f,#111827,#0f172a);
 }
 
 .container{
-    text-align:center;
+    padding:30px;
+    border-radius:35px;
+
+    background:rgba(255,255,255,.08);
+
+    border:1px solid rgba(255,255,255,.15);
+
+    backdrop-filter:blur(30px);
+    -webkit-backdrop-filter:blur(30px);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.2),
+        0 25px 50px rgba(0,0,0,.4);
 }
 
 h1{
     color:white;
+    text-align:center;
+    letter-spacing:4px;
     margin-bottom:20px;
-    font-size:2rem;
-    letter-spacing:2px;
-}
-
-canvas{
-    border-radius:20px;
-    background:#111827;
-    box-shadow:
-        0 0 30px rgba(0,255,255,.15),
-        0 0 60px rgba(0,255,255,.1);
 }
 
 .score{
     color:white;
+    text-align:center;
     margin-top:15px;
-    font-size:1.2rem;
+    font-size:20px;
+}
+
+canvas{
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,255,255,.08),
+            rgba(255,255,255,.03)
+        );
+
+    border-radius:24px;
+
+    border:1px solid rgba(255,255,255,.12);
 }
 
 #screamer{
@@ -54,98 +76,110 @@ canvas{
     height:100%;
     object-fit:cover;
     display:none;
-    z-index:9999;
+    z-index:99999;
 }
 </style>
 </head>
 <body>
 
 <div class="container">
+
     <h1>SNAKE</h1>
+
     <canvas id="game" width="600" height="600"></canvas>
-    <div class="score">Очки: <span id="score">0</span></div>
+
+    <div class="score">
+        Очки:
+        <span id="score">0</span>
+    </div>
+
 </div>
 
-<img id="screamer" src="screamer-fnaf.gif" alt="Screamer">
+<img id="screamer" src="screamer-fnaf.gif">
 
 <audio id="scream">
-    <source src="five-nights-at-freddys-2-full-scream-sound.mp3" type="audio/mpeg">
+    <source
+        src="five-nights-at-freddys-2-full-scream-sound.mp3"
+        type="audio/mpeg">
 </audio>
 
 <script>
+
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const box = 30;
-const size = 20;
+const CELL = 30;
+const GRID = 20;
+
+let score = 0;
 
 let snake = [
     {x:10,y:10}
 ];
 
 let food = {
-    x:Math.floor(Math.random()*size),
-    y:Math.floor(Math.random()*size)
+    x:5,
+    y:5
 };
 
-let dx = 1;
-let dy = 0;
-let score = 0;
+let dirX = 1;
+let dirY = 0;
 
-document.addEventListener("keydown", e => {
-    if(e.key === "ArrowUp" && dy === 0){
-        dx = 0; dy = -1;
+let lastMove = 0;
+const speed = 100;
+
+document.addEventListener("keydown",(e)=>{
+
+    const key = e.key.toLowerCase();
+
+    if((key==="w" || key==="arrowup") && dirY===0){
+        dirX = 0;
+        dirY = -1;
     }
-    if(e.key === "ArrowDown" && dy === 0){
-        dx = 0; dy = 1;
+
+    if((key==="s" || key==="arrowdown") && dirY===0){
+        dirX = 0;
+        dirY = 1;
     }
-    if(e.key === "ArrowLeft" && dx === 0){
-        dx = -1; dy = 0;
+
+    if((key==="a" || key==="arrowleft") && dirX===0){
+        dirX = -1;
+        dirY = 0;
     }
-    if(e.key === "ArrowRight" && dx === 0){
-        dx = 1; dy = 0;
+
+    if((key==="d" || key==="arrowright") && dirX===0){
+        dirX = 1;
+        dirY = 0;
     }
+
 });
 
-function draw(){
+function moveSnake(){
 
-    ctx.fillStyle = "#111827";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-
-    snake.forEach((part,i)=>{
-        ctx.fillStyle = i===0 ? "#22d3ee" : "#06b6d4";
-        ctx.fillRect(part.x*box, part.y*box, box-2, box-2);
-    });
-
-    ctx.fillStyle = "#ef4444";
-    ctx.beginPath();
-    ctx.arc(
-        food.x*box+box/2,
-        food.y*box+box/2,
-        box/2.5,
-        0,
-        Math.PI*2
-    );
-    ctx.fill();
-
-    const head = {
-        x: snake[0].x + dx,
-        y: snake[0].y + dy
+    let head = {
+        x:snake[0].x + dirX,
+        y:snake[0].y + dirY
     };
 
-    if(head.x < 0) head.x = size-1;
-    if(head.x >= size) head.x = 0;
-    if(head.y < 0) head.y = size-1;
-    if(head.y >= size) head.y = 0;
+    if(head.x < 0) head.x = GRID-1;
+    if(head.x >= GRID) head.x = 0;
 
-    if(head.x === food.x && head.y === food.y){
+    if(head.y < 0) head.y = GRID-1;
+    if(head.y >= GRID) head.y = 0;
+
+    if(head.x === food.x &&
+       head.y === food.y){
+
         score++;
-        document.getElementById("score").textContent = score;
+
+        document.getElementById("score")
+        .textContent = score;
 
         food = {
-            x:Math.floor(Math.random()*size),
-            y:Math.floor(Math.random()*size)
+            x:Math.floor(Math.random()*GRID),
+            y:Math.floor(Math.random()*GRID)
         };
+
     }else{
         snake.pop();
     }
@@ -153,32 +187,140 @@ function draw(){
     snake.unshift(head);
 
     for(let i=1;i<snake.length;i++){
+
         if(
             head.x === snake[i].x &&
             head.y === snake[i].y
         ){
-            snake = [{x:10,y:10}];
+
+            snake = [
+                {x:10,y:10}
+            ];
+
             score = 0;
-            document.getElementById("score").textContent = score;
+
+            document.getElementById("score")
+            .textContent = 0;
         }
     }
 }
 
-setInterval(draw,120);
+function drawFood(){
 
-// Скример через 20 секунд
-setTimeout(() => {
+    const pulse =
+        Math.sin(Date.now()*0.01);
 
-    const img = document.getElementById("screamer");
-    const audio = document.getElementById("scream");
+    ctx.beginPath();
+
+    ctx.fillStyle = "#ff4d6d";
+
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = "#ff4d6d";
+
+    ctx.arc(
+        food.x*CELL + CELL/2,
+        food.y*CELL + CELL/2,
+        CELL/3 + pulse,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+}
+
+function drawSnake(){
+
+    snake.forEach((part,index)=>{
+
+        const x = part.x * CELL;
+        const y = part.y * CELL;
+
+        const gradient =
+            ctx.createLinearGradient(
+                x,y,
+                x+CELL,y+CELL
+            );
+
+        gradient.addColorStop(
+            0,
+            "#b8ffff"
+        );
+
+        gradient.addColorStop(
+            1,
+            "#00d4ff"
+        );
+
+        ctx.fillStyle = gradient;
+
+        if(index===0){
+
+            ctx.shadowBlur = 25;
+            ctx.shadowColor = "#00d4ff";
+
+        }else{
+
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "#00d4ff";
+
+        }
+
+        ctx.beginPath();
+
+        ctx.roundRect(
+            x+2,
+            y+2,
+            CELL-4,
+            CELL-4,
+            12
+        );
+
+        ctx.fill();
+    });
+
+    ctx.shadowBlur = 0;
+}
+
+function render(time){
+
+    if(time - lastMove > speed){
+
+        moveSnake();
+
+        lastMove = time;
+    }
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    drawFood();
+    drawSnake();
+
+    requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
+
+setTimeout(()=>{
+
+    const img =
+        document.getElementById("screamer");
+
+    const audio =
+        document.getElementById("scream");
 
     img.style.display = "block";
 
-    audio.play().catch(() => {
-        console.log("Браузер заблокировал автозапуск звука.");
-    });
+    audio.play().catch(()=>{});
 
-}, 20000);
+},20000);
+
 </script>
 
 </body>
