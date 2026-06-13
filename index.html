@@ -1,16 +1,18 @@
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horror Snake</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Liquid Glass Snake</title>
 
 <style>
 :root{
     --glass: rgba(255,255,255,.08);
-    --border: rgba(255,255,255,.12);
-    --cyan: #00e5ff;
-    --red: #ff4d6d;
+    --glass-border: rgba(255,255,255,.18);
+    --accent:#4de8ff;
+    --bg1:#07111f;
+    --bg2:#0f172a;
 }
 
 *{
@@ -21,423 +23,503 @@
 
 body{
     font-family:Inter,Arial,sans-serif;
-    overflow:hidden;
     height:100vh;
-
-    background:
-        radial-gradient(circle at 20% 20%, rgba(0,229,255,.15), transparent 35%),
-        radial-gradient(circle at 80% 70%, rgba(255,77,109,.10), transparent 35%),
-        linear-gradient(135deg,#04070d,#0b1020,#05070f);
-
+    overflow:hidden;
     display:flex;
     justify-content:center;
     align-items:center;
+
+    background:
+    radial-gradient(circle at 15% 20%, rgba(77,232,255,.25), transparent 25%),
+    radial-gradient(circle at 80% 70%, rgba(255,255,255,.08), transparent 25%),
+    linear-gradient(135deg,var(--bg1),var(--bg2));
 }
 
-body::before{
-    content:"";
+.bg{
     position:fixed;
     inset:0;
+    overflow:hidden;
     pointer-events:none;
-    opacity:.08;
-    background:
-        repeating-linear-gradient(
-            0deg,
-            transparent 0px,
-            transparent 2px,
-            white 3px
-        );
-    animation: noise 8s linear infinite;
 }
 
-@keyframes noise{
-    from{transform:translateY(0);}
-    to{transform:translateY(100px);}
+.orb{
+    position:absolute;
+    border-radius:50%;
+    filter:blur(60px);
+    opacity:.35;
+    animation:float 12s infinite ease-in-out;
+}
+
+.orb:nth-child(1){
+    width:260px;
+    height:260px;
+    background:#00d4ff;
+    top:10%;
+    left:8%;
+}
+
+.orb:nth-child(2){
+    width:300px;
+    height:300px;
+    background:#66ffff;
+    bottom:10%;
+    right:10%;
+    animation-delay:-6s;
+}
+
+@keyframes float{
+    0%,100%{
+        transform:translateY(0px);
+    }
+    50%{
+        transform:translateY(-40px);
+    }
 }
 
 .panel{
     position:relative;
 
+    width:min(92vw,760px);
+
     padding:24px;
 
-    border-radius:30px;
+    border-radius:32px;
 
     background:var(--glass);
 
     backdrop-filter:blur(24px);
     -webkit-backdrop-filter:blur(24px);
 
-    border:1px solid var(--border);
+    border:1px solid var(--glass-border);
 
     box-shadow:
-        0 20px 60px rgba(0,0,0,.45),
-        inset 0 1px 0 rgba(255,255,255,.1);
+    0 25px 60px rgba(0,0,0,.4),
+    inset 0 1px 0 rgba(255,255,255,.15);
 }
 
-.title{
-    text-align:center;
+h1{
     color:white;
-    font-size:32px;
-    letter-spacing:5px;
-    margin-bottom:12px;
-}
-
-.subtitle{
     text-align:center;
-    color:#9ca3af;
-    margin-bottom:16px;
+    letter-spacing:4px;
+    margin-bottom:10px;
 }
 
-.stats{
+.topbar{
     display:flex;
     justify-content:space-between;
+    margin-bottom:14px;
     color:white;
-    margin-bottom:12px;
+}
+
+.card{
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.08);
+    padding:10px 14px;
+    border-radius:16px;
 }
 
 canvas{
-    border-radius:20px;
+    width:100%;
+    max-width:700px;
+    aspect-ratio:1;
+    display:block;
+    margin:auto;
+
+    border-radius:24px;
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,255,255,.05),
+        rgba(255,255,255,.02)
+    );
+
     border:1px solid rgba(255,255,255,.08);
+}
+
+.controls{
+    margin-top:14px;
+    color:#d6d6d6;
+    text-align:center;
 }
 
 .overlay{
     position:absolute;
     inset:0;
+
     display:none;
-    justify-content:center;
     align-items:center;
+    justify-content:center;
     flex-direction:column;
-    gap:12px;
 
-    border-radius:30px;
+    border-radius:32px;
 
-    background:rgba(0,0,0,.75);
+    background:rgba(0,0,0,.72);
 
     color:white;
 }
 
 .overlay button{
+    margin-top:15px;
     border:none;
+    padding:12px 22px;
+    border-radius:14px;
     cursor:pointer;
-
-    padding:12px 20px;
-
-    border-radius:12px;
-
-    background:var(--cyan);
-    color:black;
     font-weight:bold;
-}
-
-.footer{
-    margin-top:12px;
-    text-align:center;
-    color:#9ca3af;
-    font-size:13px;
 }
 </style>
 </head>
 <body>
 
+<div class="bg">
+<div class="orb"></div>
+<div class="orb"></div>
+</div>
+
 <div class="panel">
 
-    <div class="title">HORROR SNAKE</div>
-    <div class="subtitle">WASD или стрелки</div>
+<h1>LIQUID SNAKE</h1>
 
-    <div class="stats">
-        <div>Очки: <span id="score">0</span></div>
-        <div>Рекорд: <span id="best">0</span></div>
-    </div>
+<div class="topbar">
+<div class="card">
+Очки:
+<span id="score">0</span>
+</div>
 
-    <canvas id="game" width="600" height="600"></canvas>
+<div class="card">
+Рекорд:
+<span id="best">0</span>
+</div>
+</div>
 
-    <div class="footer">
-        Неоновая хоррор-змейка
-    </div>
+<canvas id="game" width="600" height="600"></canvas>
 
-    <div class="overlay" id="gameOver">
-        <h1>GAME OVER</h1>
-        <p>Змейка столкнулась сама с собой</p>
-        <button onclick="restart()">Играть снова</button>
-    </div>
+<div class="controls">
+WASD / Стрелки • Space = Пауза
+</div>
+
+<div class="overlay" id="gameOver">
+<h2>Игра окончена</h2>
+<p>Нажмите кнопку для новой игры</p>
+<button onclick="restart()">Заново</button>
+</div>
 
 </div>
 
 <script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const SIZE=20;
+const CELL=30;
 
-const CELL = 30;
-const GRID = 20;
+let snake=[];
+let food={};
+let dx=1;
+let dy=0;
 
-let snake;
-let food;
-let dirX;
-let dirY;
-let score;
-let best = Number(localStorage.getItem("snakeBest") || 0);
+let score=0;
+let best=Number(localStorage.getItem("glassBest")||0);
 
-document.getElementById("best").textContent = best;
+let running=true;
+let paused=false;
 
-function resetGame(){
+document.getElementById("best").textContent=best;
 
-    snake = [
-        {x:10,y:10}
-    ];
+function reset(){
 
-    food = randomFood();
+snake=[
+{x:10,y:10}
+];
 
-    dirX = 1;
-    dirY = 0;
+food=randomFood();
 
-    score = 0;
+dx=1;
+dy=0;
 
-    document.getElementById("score").textContent = 0;
+score=0;
+
+document.getElementById("score").textContent=0;
 }
 
 function randomFood(){
-
-    return {
-        x:Math.floor(Math.random()*GRID),
-        y:Math.floor(Math.random()*GRID)
-    };
+return{
+x:Math.floor(Math.random()*SIZE),
+y:Math.floor(Math.random()*SIZE)
+};
 }
 
-resetGame();
+reset();
 
-document.addEventListener("keydown",(e)=>{
+document.addEventListener("keydown",e=>{
 
-    switch(e.code){
+switch(e.code){
 
-        case "KeyW":
-        case "ArrowUp":
+case"Space":
+paused=!paused;
+break;
 
-            if(dirY===0){
-                dirX=0;
-                dirY=-1;
-            }
-            break;
+case"KeyW":
+case"ArrowUp":
+if(dy===0){
+dx=0;
+dy=-1;
+}
+break;
 
-        case "KeyS":
-        case "ArrowDown":
+case"KeyS":
+case"ArrowDown":
+if(dy===0){
+dx=0;
+dy=1;
+}
+break;
 
-            if(dirY===0){
-                dirX=0;
-                dirY=1;
-            }
-            break;
+case"KeyA":
+case"ArrowLeft":
+if(dx===0){
+dx=-1;
+dy=0;
+}
+break;
 
-        case "KeyA":
-        case "ArrowLeft":
-
-            if(dirX===0){
-                dirX=-1;
-                dirY=0;
-            }
-            break;
-
-        case "KeyD":
-        case "ArrowRight":
-
-            if(dirX===0){
-                dirX=1;
-                dirY=0;
-            }
-            break;
-    }
+case"KeyD":
+case"ArrowRight":
+if(dx===0){
+dx=1;
+dy=0;
+}
+break;
+}
 });
 
-let lastMove = 0;
-const SPEED = 100;
-let running = true;
+let touchStartX=0;
+let touchStartY=0;
 
-function move(){
+canvas.addEventListener("touchstart",e=>{
+touchStartX=e.touches[0].clientX;
+touchStartY=e.touches[0].clientY;
+});
 
-    const head = {
-        x:snake[0].x + dirX,
-        y:snake[0].y + dirY
-    };
+canvas.addEventListener("touchend",e=>{
 
-    if(head.x < 0) head.x = GRID - 1;
-    if(head.x >= GRID) head.x = 0;
+const x=e.changedTouches[0].clientX;
+const y=e.changedTouches[0].clientY;
 
-    if(head.y < 0) head.y = GRID - 1;
-    if(head.y >= GRID) head.y = 0;
+const dxSwipe=x-touchStartX;
+const dySwipe=y-touchStartY;
 
-    for(let i=1;i<snake.length;i++){
+if(Math.abs(dxSwipe)>Math.abs(dySwipe)){
 
-        if(
-            head.x === snake[i].x &&
-            head.y === snake[i].y
-        ){
-            gameOver();
-            return;
-        }
-    }
-
-    snake.unshift(head);
-
-    if(
-        head.x === food.x &&
-        head.y === food.y
-    ){
-
-        score++;
-
-        document.getElementById("score")
-        .textContent = score;
-
-        if(score > best){
-
-            best = score;
-
-            localStorage.setItem(
-                "snakeBest",
-                best
-            );
-
-            document.getElementById("best")
-            .textContent = best;
-        }
-
-        food = randomFood();
-
-    }else{
-
-        snake.pop();
-    }
+if(dxSwipe>0 && dx===0){
+dx=1;dy=0;
 }
 
-function drawFood(){
-
-    const pulse =
-        Math.sin(Date.now()*0.01);
-
-    ctx.beginPath();
-
-    ctx.fillStyle = "#ff4d6d";
-
-    ctx.shadowBlur = 25;
-    ctx.shadowColor = "#ff4d6d";
-
-    ctx.arc(
-        food.x*CELL + CELL/2,
-        food.y*CELL + CELL/2,
-        CELL/3 + pulse,
-        0,
-        Math.PI*2
-    );
-
-    ctx.fill();
-
-    ctx.shadowBlur = 0;
+if(dxSwipe<0 && dx===0){
+dx=-1;dy=0;
 }
 
-function drawSnake(){
+}else{
 
-    snake.forEach((part,index)=>{
-
-        const x = part.x * CELL;
-        const y = part.y * CELL;
-
-        const g =
-            ctx.createLinearGradient(
-                x,y,
-                x+CELL,y+CELL
-            );
-
-        g.addColorStop(0,"#c8ffff");
-        g.addColorStop(1,"#00e5ff");
-
-        ctx.fillStyle = g;
-
-        ctx.shadowBlur =
-            index === 0 ? 30 : 10;
-
-        ctx.shadowColor = "#00e5ff";
-
-        ctx.beginPath();
-
-        ctx.roundRect(
-            x+2,
-            y+2,
-            CELL-4,
-            CELL-4,
-            12
-        );
-
-        ctx.fill();
-    });
-
-    ctx.shadowBlur = 0;
+if(dySwipe>0 && dy===0){
+dx=0;dy=1;
 }
 
-function drawGrid(){
-
-    ctx.strokeStyle =
-        "rgba(255,255,255,.03)";
-
-    for(let i=0;i<=GRID;i++){
-
-        ctx.beginPath();
-        ctx.moveTo(i*CELL,0);
-        ctx.lineTo(i*CELL,canvas.height);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(0,i*CELL);
-        ctx.lineTo(canvas.width,i*CELL);
-        ctx.stroke();
-    }
+if(dySwipe<0 && dy===0){
+dx=0;dy=-1;
 }
-
-function render(time){
-
-    if(running && time-lastMove>SPEED){
-
-        move();
-
-        lastMove=time;
-    }
-
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-    drawGrid();
-    drawFood();
-    drawSnake();
-
-    requestAnimationFrame(render);
 }
+});
 
 function gameOver(){
 
-    running = false;
+running=false;
 
-    document
-    .getElementById("gameOver")
-    .style.display = "flex";
+document.getElementById("gameOver")
+.style.display="flex";
 }
 
 function restart(){
 
-    running = true;
+document.getElementById("gameOver")
+.style.display="none";
 
-    document
-    .getElementById("gameOver")
-    .style.display = "none";
+running=true;
 
-    resetGame();
+reset();
+}
+
+function move(){
+
+const head={
+x:snake[0].x+dx,
+y:snake[0].y+dy
+};
+
+if(head.x<0)head.x=SIZE-1;
+if(head.x>=SIZE)head.x=0;
+if(head.y<0)head.y=SIZE-1;
+if(head.y>=SIZE)head.y=0;
+
+for(let i=1;i<snake.length;i++){
+
+if(
+head.x===snake[i].x &&
+head.y===snake[i].y
+){
+gameOver();
+return;
+}
+}
+
+snake.unshift(head);
+
+if(
+head.x===food.x &&
+head.y===food.y
+){
+
+score++;
+
+document.getElementById("score")
+.textContent=score;
+
+if(score>best){
+
+best=score;
+
+localStorage.setItem(
+"glassBest",
+best
+);
+
+document.getElementById("best")
+.textContent=best;
+}
+
+food=randomFood();
+
+}else{
+snake.pop();
+}
+}
+
+function drawGrid(){
+
+ctx.strokeStyle=
+"rgba(255,255,255,.03)";
+
+for(let i=0;i<=SIZE;i++){
+
+ctx.beginPath();
+ctx.moveTo(i*CELL,0);
+ctx.lineTo(i*CELL,canvas.height);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(0,i*CELL);
+ctx.lineTo(canvas.width,i*CELL);
+ctx.stroke();
+}
+}
+
+function drawFood(){
+
+const pulse=
+Math.sin(Date.now()*0.01);
+
+ctx.shadowBlur=25;
+ctx.shadowColor="#ff4d6d";
+
+ctx.fillStyle="#ff4d6d";
+
+ctx.beginPath();
+
+ctx.arc(
+food.x*CELL+CELL/2,
+food.y*CELL+CELL/2,
+CELL/3+pulse,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
+ctx.shadowBlur=0;
+}
+
+function drawSnake(){
+
+snake.forEach((part,index)=>{
+
+const x=part.x*CELL;
+const y=part.y*CELL;
+
+const g=
+ctx.createLinearGradient(
+x,y,
+x+CELL,
+y+CELL
+);
+
+g.addColorStop(0,"#dfffff");
+g.addColorStop(1,"#4de8ff");
+
+ctx.fillStyle=g;
+
+ctx.shadowBlur=
+index===0?30:12;
+
+ctx.shadowColor=
+"#4de8ff";
+
+ctx.beginPath();
+
+ctx.roundRect(
+x+2,
+y+2,
+CELL-4,
+CELL-4,
+12
+);
+
+ctx.fill();
+});
+
+ctx.shadowBlur=0;
+}
+
+let lastMove=0;
+const SPEED=100;
+
+function render(time){
+
+if(
+running &&
+!paused &&
+time-lastMove>SPEED
+){
+move();
+lastMove=time;
+}
+
+ctx.clearRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+drawGrid();
+drawFood();
+drawSnake();
+
+requestAnimationFrame(render);
 }
 
 requestAnimationFrame(render);
-
 </script>
 
 </body>
 </html>
+```
